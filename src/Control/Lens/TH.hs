@@ -49,6 +49,7 @@ module Control.Lens.TH
   , lensRulesFor
   , classyRules
   , classyRules_
+  , Namer
   , lensField
   , lensClass
   , simpleLenses
@@ -58,6 +59,9 @@ module Control.Lens.TH
   , generateLazyPatterns
   -- ** Namers
   , lookupNamer
+  , underscoreNamer
+  , camelCaseNamer
+  , abbreviatedNamer
   ) where
 
 #if !MIN_VERSION_base(4,8,0)
@@ -167,8 +171,11 @@ createClass f r =
 -- being named.
 --
 -- TypeName -> FieldNames -> FieldName -> DefinitionNames
-lensField :: Lens' LensRules (Name -> [Name] -> Name -> [DefName])
+lensField :: Lens' LensRules Namer
 lensField f r = fmap (\x -> r { _fieldToDef = x}) (f (_fieldToDef r))
+
+type Namer = (Name -> [Name] -> Name -> [DefName])
+
 
 -- | Retrieve options such as the name of the class and method to put in it to
 -- build a class around monomorphic data types. "Classy" lenses are generated
@@ -201,9 +208,9 @@ lensRulesFor ::
   LensRules
 lensRulesFor fields = lensRules & lensField .~ lookupNamer fields
 
--- | Create a function for 'lensField' from explicit pairings of
--- @(fieldName, lensName)@.
-lookupNamer :: [(String,String)] -> Name -> [Name] -> Name -> [DefName]
+-- | Create a 'Namer' from explicit pairings of @(fieldName,
+-- lensName)@.
+lookupNamer :: [(String,String)] -> Namer
 lookupNamer kvs _ _ field =
   [ TopName (mkName v) | (k,v) <- kvs, k == nameBase field]
 
@@ -604,7 +611,8 @@ overHead f (x:xs) = f x : xs
 underscoreFields :: LensRules
 underscoreFields = defaultFieldRules & lensField .~ underscoreNamer
 
-underscoreNamer :: Name -> [Name] -> Name -> [DefName]
+-- | 'Namer' for 'underscoreFields'.
+underscoreNamer :: Namer
 underscoreNamer _ _ field = maybeToList $ do
   _      <- prefix field'
   method <- niceLens
@@ -627,7 +635,8 @@ underscoreNamer _ _ field = maybeToList $ do
 camelCaseFields :: LensRules
 camelCaseFields = defaultFieldRules
 
-camelCaseNamer :: Name -> [Name] -> Name -> [DefName]
+-- | 'Namer' for 'camelCaseFields'.
+camelCaseNamer :: Namer
 camelCaseNamer tyName fields field = maybeToList $ do
 
   fieldPart <- stripPrefix expectedPrefix (nameBase field)
@@ -655,7 +664,8 @@ camelCaseNamer tyName fields field = maybeToList $ do
 abbreviatedFields :: LensRules
 abbreviatedFields = defaultFieldRules { _fieldToDef = abbreviatedNamer }
 
-abbreviatedNamer :: Name -> [Name] -> Name -> [DefName]
+-- | 'Namer' for 'abbreviatedFields'.
+abbreviatedNamer :: Namer
 abbreviatedNamer _ fields field = maybeToList $ do
 
   fieldPart <- stripMaxLc (nameBase field)
