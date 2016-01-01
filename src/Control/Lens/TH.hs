@@ -59,6 +59,7 @@ module Control.Lens.TH
   , generateLazyPatterns
   -- ** Namers
   , underscoreNoPrefixNamer
+  , mappingNamer
   , lookupNamer
   , underscoreNamer
   , camelCaseNamer
@@ -207,6 +208,11 @@ underscoreNoPrefixNamer _ _ n =
     '_':x:xs -> [TopName (mkName (toLower x:xs))]
     _        -> []
 
+-- | Create a 'Namer' from a mapping function. If the function returns
+-- '[]', it creates no lens for the field.
+mappingNamer :: (String -> [String]) -- ^ A function that maps a @fieldName@ to @lensName@s.
+             -> Namer
+mappingNamer mapper _ _ = fmap (TopName . mkName) . mapper . nameBase
 
 -- | Construct a 'LensRules' value for generating top-level definitions
 -- using the given map from field names to definition names.
