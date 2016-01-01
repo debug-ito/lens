@@ -56,6 +56,8 @@ module Control.Lens.TH
   , generateSignatures
   , generateUpdateableOptics
   , generateLazyPatterns
+  -- ** Namers
+  , lookupNamer
   ) where
 
 #if !MIN_VERSION_base(4,8,0)
@@ -197,11 +199,14 @@ lensRules = LensRules
 lensRulesFor ::
   [(String, String)] {- ^ [(Field Name, Definition Name)] -} ->
   LensRules
-lensRulesFor fields = lensRules & lensField .~ mkNameLookup fields
+lensRulesFor fields = lensRules & lensField .~ lookupNamer fields
 
-mkNameLookup :: [(String,String)] -> Name -> [Name] -> Name -> [DefName]
-mkNameLookup kvs _ _ field =
+-- | Create a function for 'lensField' from explicit pairings of
+-- @(fieldName, lensName)@.
+lookupNamer :: [(String,String)] -> Name -> [Name] -> Name -> [DefName]
+lookupNamer kvs _ _ field =
   [ TopName (mkName v) | (k,v) <- kvs, k == nameBase field]
+
 
 -- | Rules for making lenses and traversals that precompose another 'Lens'.
 classyRules :: LensRules
@@ -231,7 +236,7 @@ classyRulesFor
   LensRules
 classyRulesFor classFun fields = classyRules
   & lensClass .~ (over (mapped . both) mkName . classFun . nameBase)
-  & lensField .~ mkNameLookup fields
+  & lensField .~ lookupNamer fields
 
 classyRules_ :: LensRules
 classyRules_
