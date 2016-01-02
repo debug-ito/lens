@@ -369,5 +369,48 @@ makeLenses ''PureNoFields
 data ReviewTest where ReviewTest :: a -> ReviewTest
 makePrisms ''ReviewTest
 
+
+-- test Namers
+
+data CheckUnderscoreNoPrefixNamer = CheckUnderscoreNoPrefixNamer
+                                    { _fieldUnderscoreNoPrefix :: Int }
+makeLensesWith (lensRules & lensField .~ underscoreNoPrefixNamer ) ''CheckUnderscoreNoPrefixNamer
+checkUnderscoreNoPrefixNamer :: Lens' CheckUnderscoreNoPrefixNamer Int
+checkUnderscoreNoPrefixNamer = fieldUnderscoreNoPrefix
+
+-- how can we test NOT generating a lens for some fields?
+
+data CheckMappingNamer = CheckMappingNamer
+                         { fieldMappingNamer :: String }
+makeLensesWith (lensRules & lensField .~ (mappingNamer (return . ("hogehoge_" ++)))) ''CheckMappingNamer
+checkMappingNamer :: Lens' CheckMappingNamer String
+checkMappingNamer = hogehoge_fieldMappingNamer
+
+data CheckLookupNamer = CheckLookupNamer
+                        { fieldLookupNamer :: Int }
+makeLensesWith (lensRules & lensField .~ (lookupNamer [("fieldLookupNamer", "foobarFieldLookupNamer")])) ''CheckLookupNamer
+checkLookupNamer :: Lens' CheckLookupNamer Int
+checkLookupNamer = foobarFieldLookupNamer
+
+data CheckUnderscoreNamer = CheckUnderscoreNamer
+                            { _hogeprefix_fieldCheckUnderscoreNamer :: Int }
+makeLensesWith (lensRules & lensField .~ underscoreNamer) ''CheckUnderscoreNamer
+checkUnderscoreNamer :: Lens' CheckUnderscoreNamer Int
+checkUnderscoreNamer = fieldCheckUnderscoreNamer
+
+data CheckCamelCaseNamer = CheckCamelCaseNamer
+                           { _checkCamelCaseNamerFieldCamelCaseNamer :: Int }
+makeLensesWith (lensRules & lensField .~ camelCaseNamer) ''CheckCamelCaseNamer
+checkCamelCaseNamer :: Lens' CheckCamelCaseNamer Int
+checkCamelCaseNamer = fieldCamelCaseNamer
+
+data CheckAbbreviatedNamer = CheckAbbreviatedNamer
+                             { _hogeprefix_fieldAbbreviatedNamer :: Int }
+makeLensesWith (lensRules & lensField .~ abbreviatedNamer ) ''CheckAbbreviatedNamer
+checkAbbreviatedNamer :: Lens' CheckAbbreviatedNamer Int
+checkAbbreviatedNamer = fieldAbbreviatedNamer
+
+
+
 main :: IO ()
 main = putStrLn "test/templates.hs: ok"
